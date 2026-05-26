@@ -15,8 +15,7 @@ interface Props {
   onTaskAdded: (task: Todo) => void;
 }
 
-// ⬇️ ADD THIS STRING DYNAMICALLY (just like we did in page.tsx)
-const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || "https://fullstack-test-task-1-xvql.onrender.com"}/api`;
+const API_BASE = "https://fullstack-test-task-1-xvql.onrender.com/api";
 
 export default function TaskForm({ categories, onTaskAdded }: Props) {
   const {
