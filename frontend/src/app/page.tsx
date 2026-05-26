@@ -18,7 +18,7 @@ export interface Category {
   name: string;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://fullstack-test-task-1-xvql.onrender.com/api";
+const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || "https://fullstack-test-task-1-xvql.onrender.com"}/api`;
 
 export default function TodoPage() {
   const [todos, setTodos] = useState<Todo[]>([]);
