@@ -1,39 +1,29 @@
-# Full-Stack Todo Application (UITOP Task Submission)
+# Full-Stack Todo Management Console
 
-A modern full-stack task management application featuring category-based task grouping, smart business logic limits, and a smooth user experience with transient notifications and undo capabilities.
+A full-stack application built for the UITOP assessment framework using Next.js, NestJS/Express, Prisma, and PostgreSQL/SQLite.
 
----
+## Deployed Links
 
-## 🚀 Features Implemented
+- **Live Frontend (Vercel):** https://full-stack-test-task.vercel.app
+- **Live Backend API (Render):** https://fullstack-test-task-1-xvql.onrender.com
 
-### Frontend (Next.js & TypeScript)
+## Features Implemented
 
-- **Task Management Dashboard:** Displays text, category tags, and completion status.
-- **React Hook Form Validation:** Implements strict client-side validation on task creation inputs and dropdowns.
-- **Transient Undo Notification:** Marking a task complete or deleting it triggers a snackbar notification with an **"Undo"** option. Completed tasks remain visible for 5 seconds allowing a full restoration before committing changes.
-- **Category Filtering:** Live dropdown filter above the list to filter tasks by their specific categories or show "All".
-- **State Management Handling:** Robust UI loading spinners, custom empty states with icons, and contextual server-error alerts.
+- Dynamic Task Creation & State management via React Hook Form
+- Optimistic UI updates with a 5-second transient "Undo" lifecycle for deletions and completions
+- Under-the-hood business logic enforcing a strict maximum threshold of 5 tasks per category (returns a 400 Bad Request error if exceeded)
+- **Bonus Feature:** Multi-checkbox selection framework allowing bulk task resolution lifecycle execution
 
-### Backend (NestJS, Prisma & SQLite)
+## How to Run Locally
 
-- **Relational Persistence:** Clean SQLite architecture mapping Tasks and Categories.
-- **Business Logic Rule Enforcement:** A database aggregate checkpoint limits categories to a **maximum of 5 active tasks**. Exceeding this triggers a strict `400 Bad Request` exception thrown down to the client layout.
-- **Unit Testing Suites (Bonus):** Complete Jest architecture with custom mock configurations testing both `TodosController` and `TodosService` in isolated mock memory.
+### Backend Setup
 
----
+1. Navigate to `/backend`
+2. Run `npm install`
+3. Run `npm run start:dev` (Starts on port 5000)
 
-## 🛠️ Installation & Setup
+### Frontend Setup
 
-Ensure you have [Node.js](https://nodejs.org/) installed on your machine before proceeding.
-
-### 1. Backend Service Setup
-
-Open your terminal, navigate to the backend folder, install your core dependencies, run database migrations to build your local SQLite file, seed default categories, and launch the development environment:
-
-```bash
-cd backend
-npm install
-npx prisma migrate dev --name init
-npx prisma db seed
-npm run start:dev
-```
+1. Navigate to `/frontend`
+2. Run `npm install`
+3. Run `npm run dev` (Starts on port 3000)
