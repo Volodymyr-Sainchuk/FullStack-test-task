@@ -1,10 +1,12 @@
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Enable CORS to allow your Vercel frontend domain to connect
   app.enableCors({
-    origin: '*', // Allows all origins, ideal for testing deployments
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    origin: ['http://localhost:3000', process.env.FRONTEND_URL],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
 
