@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import axios from "axios";
+import { api } from "../../lib/api";
 
 interface TaskFormProps {
   categories: string[];
@@ -28,7 +28,7 @@ export default function TaskForm({ categories, onTaskAdded }: TaskFormProps) {
       setIsSubmitting(true);
       setError(null);
 
-      const response = await axios.post(`/todos`, {
+      const response = await api.post("/todos", {
         text: text.trim(),
         category,
       });
@@ -36,7 +36,6 @@ export default function TaskForm({ categories, onTaskAdded }: TaskFormProps) {
       onTaskAdded(response.data);
       setText("");
     } catch (err: any) {
-      console.error("Error:", err);
       setError(err.response?.data?.message || "Failed to create task.");
     } finally {
       setIsSubmitting(false);

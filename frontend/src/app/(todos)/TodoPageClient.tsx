@@ -1,62 +1,43 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import axios from "axios";
-import TaskForm from "./components/TaskForm";
-import TaskItem from "./components/TaskItem";
-import TaskFilters from "./components/TaskFilters";
-import BulkActionButton from "./components/BulkActionButton";
-import GlobalError from "./components/GlobalError";
-import LoadingSpinner from "./components/LoadingSpinner";
-import EmptyState from "./components/EmptyState";
-import UndoSnackbar from "./components/UndoSnackbar";
+import { useRef, useState } from "react";
+import { api } from "../../lib/api";
+import TaskForm from "../components/TaskForm";
+import TaskItem from "../components/TaskItem";
+import TaskFilters from "../components/TaskFilters";
+import BulkActionButton from "../components/BulkActionButton";
+import GlobalError from "../components/GlobalError";
+import EmptyState from "../components/EmptyState";
+import UndoSnackbar from "../components/UndoSnackbar";
 
 export interface Todo {
   id: string;
   text: string;
   category: string;
   completed: boolean;
+  createdAt: string;
 }
 
-export interface Category {
-  id: string;
-  name: string;
+interface TodoPageClientProps {
+  initialTodos: Todo[];
+  initialCategories: string[];
+  initialError: string | null;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000/api";
-// const API_BASE = "http://localhost:5000/api";
-axios.defaults.baseURL = API_BASE;
-console.log("Your current API URL is:", API_BASE);
-
-export default function TodoPage() {
-  const [todos, setTodos] = useState<Todo[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
+export default function TodoPageClient({
+  initialTodos,
+  initialCategories,
+  initialError,
+}: TodoPageClientProps) {
+  const [todos, setTodos] = useState<Todo[]>(initialTodos);
+  const [categories, setCategories] = useState<string[]>(initialCategories);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  const [loading, setLoading] = useState<boolean>(true);
-  const [globalError, setGlobalError] = useState<string | null>(null);
+  const [globalError, setGlobalError] = useState<string | null>(initialError);
 
   const [snackbar, setSnackbar] = useState<{ message: string; onUndo: () => void } | null>(null);
   const snackbarTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [selectedTodoIds, setSelectedTodoIds] = useState<string[]>([]);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const [todosRes, catsRes] = await Promise.all([axios.get(`/todos`), axios.get(`/categories`)]);
-      setTodos(todosRes.data);
-      setCategories(catsRes.data.map((c: Category) => c.name));
-      setGlobalError(null);
-    } catch (err) {
-      setGlobalError("Failed to synchronize with the backend service.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   const triggerSnackbar = (message: string, onUndo: () => void) => {
     if (snackbarTimeoutRef.current) clearTimeout(snackbarTimeoutRef.current);
@@ -82,7 +63,7 @@ export default function TodoPage() {
     setTimeout(async () => {
       if (!isUndone) {
         try {
-          await axios.patch(`${API_BASE}/todos/${id}`, { completed: true });
+          await api.patch(`/todos/${id}`, { completed: true });
           setTodos((prev) => prev.filter((t) => t.id !== id));
         } catch (err) {
           setGlobalError("Failed to update task status.");
@@ -107,7 +88,7 @@ export default function TodoPage() {
     setTimeout(async () => {
       if (!isUndone) {
         try {
-          await axios.delete(`${API_BASE}/todos/${id}`);
+          await api.delete(`/todos/${id}`);
         } catch (err) {
           setGlobalError("Could not process task removal on backend.");
           setTodos((prev) => [...prev, targetTodo]);
@@ -132,7 +113,7 @@ export default function TodoPage() {
     setTimeout(async () => {
       if (!isUndone) {
         try {
-          await Promise.all(idsToProcess.map((id) => axios.patch(`${API_BASE}/todos/${id}`, { completed: true })));
+          await Promise.all(idsToProcess.map((id) => api.patch(`/todos/${id}`, { completed: true })));
           setTodos((prev) => prev.filter((t) => !idsToProcess.includes(t.id)));
         } catch (err) {
           setGlobalError("Bulk update failed execution lifecycle.");
@@ -164,11 +145,9 @@ export default function TodoPage() {
         <BulkActionButton selectedCount={selectedTodoIds.length} onBulkComplete={handleBulkComplete} />
       </div>
 
-      <LoadingSpinner isLoading={loading} />
+      <EmptyState show={filteredTodos.length === 0} />
 
-      <EmptyState show={!loading && filteredTodos.length === 0} />
-
-      {!loading && filteredTodos.length > 0 && (
+      {filteredTodos.length > 0 && (
         <div className="space-y-3">
           {filteredTodos.map((todo) => (
             <TaskItem

@@ -1,55 +1,151 @@
 # Full-Stack Todo Management Console
 
-A full-stack application built for the UITOP assessment framework using Next.js, NestJS/Express, Prisma, and PostgreSQL/SQLite.
+A full-stack todo app built for the UITOP assessment using **Next.js**, **NestJS**, **Prisma**, and **SQLite**.
 
 ## Deployed Links
 
-- **Live Frontend (Vercel):** https://full-stack-test-task.vercel.app
-- **Live Backend API (Render):** https://fullstack-test-task-1-xvql.onrender.com
+- **Frontend (Vercel):** https://full-stack-test-task.vercel.app
+- **Backend API (Render):** https://fullstack-test-task-1-xvql.onrender.com
 
-## Features Implemented
+## Tech Stack
 
-- Dynamic Task Creation & State management via React Hook Form
-- Optimistic UI updates with a 5-second transient "Undo" lifecycle for deletions and completions
-- Under-the-hood business logic enforcing a strict maximum threshold of 5 tasks per category (returns a 400 Bad Request error if exceeded)
-- **Bonus Feature:** Multi-checkbox selection framework allowing bulk task resolution lifecycle execution
+| Layer    | Technology                          |
+| -------- | ----------------------------------- |
+| Frontend | Next.js 14, React, Tailwind CSS     |
+| Backend  | NestJS, Prisma ORM                  |
+| Database | SQLite                              |
+| DevOps   | Docker Compose                      |
 
-## How to Run Locally
+## Features
 
-### Backend Setup
+- Create tasks with category selection
+- Filter tasks by category
+- Optimistic UI with a 5-second undo window for complete/delete actions
+- Max **5 active tasks per category** (returns `400 Bad Request` when exceeded)
+- Bulk select and complete multiple tasks
+- Task creation timestamp shown on each item
 
-1. Navigate to `/backend`
-2. Run `npm install`
-3. Run `npm run start:dev` (Starts on port 5000)
+## API Endpoints
 
-### Frontend Setup
+Base URL (local): `http://localhost:4000/api`
 
-1. Navigate to `/frontend`
-2. Run `npm install`
-3. Run `npm run dev` (Starts on port 3000)
+| Method | Endpoint           | Description                    |
+| ------ | ------------------ | ------------------------------ |
+| GET    | `/categories`      | List all categories            |
+| GET    | `/todos`           | List active todos              |
+| GET    | `/todos?category=` | Filter todos by category       |
+| POST   | `/todos`           | Create a todo                  |
+| PATCH  | `/todos/:id`       | Update todo (e.g. `{ completed: true }`) |
+| DELETE | `/todos/:id`       | Delete a todo                  |
 
-### How to start Docker
+## Run with Docker (recommended)
 
+From the project root:
 
-1. Build and Start the Containers
-   Run the orchestration command with the --build flag. This forces Docker to install fresh node_modules inside the containers and compile the TypeScript environments:
+```bash
+docker compose up --build
+```
 
-   docker-compose up --build
+This starts:
 
-2. Database & Network Sync (Automatic)
-   Once execution begins, Docker will orchestrate the environment in the following sequence:
+- **Backend** on http://localhost:4000
+- **Frontend** on http://localhost:3000
+- **SQLite database** in a persistent Docker volume (`sqlite_data`)
 
-Launch the todo-backend container.
+On startup, the backend automatically runs `prisma migrate deploy`.
 
-Execute npx prisma db push inside the backend container to provision the SQLite database structure (dev.db).
+### Seed the database (optional)
 
-Start the NestJS engine on port 5000.
+```bash
+docker compose exec backend npm run seed
+```
 
-Launch the todo-frontend container (Next.js) on port 3000, injecting NEXT_PUBLIC_API_BASE=http://localhost:5000/api.
+### Stop containers
 
-3. Access the Application
-   Once the terminal logs stabilize, open your browser and navigate to:
+```bash
+docker compose down
+```
 
-🌐 Frontend Layout: http://localhost:3000
+## Run locally (without Docker)
 
-⚙️ Backend API Specs: http://localhost:5000/api
+### Prerequisites
+
+- Node.js 20+
+- npm
+
+### Backend
+
+```bash
+cd backend
+npm install
+```
+
+Create `backend/.env`:
+
+```env
+DATABASE_URL="file:./dev.db"
+PORT=4000
+```
+
+Then run migrations, seed, and start the server:
+
+```bash
+npx prisma migrate dev
+npm run seed
+npm run start:dev
+```
+
+Backend runs at http://localhost:4000/api
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+```
+
+Create `frontend/.env.local`:
+
+```env
+NEXT_PUBLIC_API_BASE=http://localhost:4000/api
+```
+
+Start the dev server:
+
+```bash
+npm run dev
+```
+
+Frontend runs at http://localhost:3000
+
+## Project Structure
+
+```text
+├── backend/          NestJS API + Prisma schema/migrations
+├── frontend/         Next.js app
+├── docker-compose.yml
+└── README.md
+```
+
+## Scripts
+
+### Backend
+
+| Command              | Description              |
+| -------------------- | ------------------------ |
+| `npm run start:dev`  | Start in watch mode      |
+| `npm run build`      | Build for production     |
+| `npm run seed`       | Seed default categories  |
+
+### Frontend
+
+| Command         | Description           |
+| --------------- | --------------------- |
+| `npm run dev`   | Start dev server      |
+| `npm run build` | Production build      |
+| `npm run start` | Start production app  |
+
+## Notes
+
+- The backend uses port **4000** (not 5000) to avoid conflicts with macOS AirPlay Receiver on port 5000.
+- Frontend API calls go through a shared Axios client (`frontend/src/lib/api.ts`) with JSON headers configured by default.
