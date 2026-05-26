@@ -5,6 +5,11 @@ import axios from "axios";
 import TaskForm from "./components/TaskForm";
 import TaskItem from "./components/TaskItem";
 import TaskFilters from "./components/TaskFilters";
+import BulkActionButton from "./components/BulkActionButton";
+import GlobalError from "./components/GlobalError";
+import LoadingSpinner from "./components/LoadingSpinner";
+import EmptyState from "./components/EmptyState";
+import UndoSnackbar from "./components/UndoSnackbar";
 
 export interface Todo {
   id: string;
@@ -18,7 +23,10 @@ export interface Category {
   name: string;
 }
 
-const API_BASE = "https://fullstack-test-task-1-xvql.onrender.com/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000/api";
+// const API_BASE = "http://localhost:5000/api";
+axios.defaults.baseURL = API_BASE;
+console.log("Your current API URL is:", API_BASE);
 
 export default function TodoPage() {
   const [todos, setTodos] = useState<Todo[]>([]);
@@ -35,10 +43,7 @@ export default function TodoPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [todosRes, catsRes] = await Promise.all([
-        axios.get(`${API_BASE}/todos`),
-        axios.get(`${API_BASE}/categories`),
-      ]);
+      const [todosRes, catsRes] = await Promise.all([axios.get(`/todos`), axios.get(`/categories`)]);
       setTodos(todosRes.data);
       setCategories(catsRes.data.map((c: Category) => c.name));
       setGlobalError(null);
@@ -147,38 +152,23 @@ export default function TodoPage() {
     <main className="max-w-3xl mx-auto p-6 min-h-screen pb-24">
       <h1 className="text-3xl font-extrabold mb-8 text-gray-900 tracking-tight">Workspace Management Console</h1>
 
-      {globalError && (
-        <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-xl mb-6 text-sm font-medium">
-          {globalError}
-        </div>
-      )}
+      <GlobalError message={globalError} />
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200/80 mb-8">
         <h2 className="text-base font-semibold text-gray-800 mb-4">Create New Action Item</h2>
         <TaskForm categories={categories} onTaskAdded={(newTask) => setTodos((prev) => [newTask, ...prev])} />
       </div>
 
-      <div className="mb-6 flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
+      <div className="mb-6 flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100 gap-4">
         <TaskFilters categories={categories} selected={selectedCategory} onSelect={setSelectedCategory} />
-        {selectedTodoIds.length > 0 && (
-          <button
-            onClick={handleBulkComplete}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-xs font-semibold transition shadow-sm shadow-indigo-200"
-          >
-            Mark Selected Done ({selectedTodoIds.length})
-          </button>
-        )}
+        <BulkActionButton selectedCount={selectedTodoIds.length} onBulkComplete={handleBulkComplete} />
       </div>
 
-      {loading ? (
-        <div className="flex justify-center items-center py-16">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-600 border-t-transparent"></div>
-        </div>
-      ) : filteredTodos.length === 0 ? (
-        <div className="text-center py-16 border border-dashed border-gray-300 rounded-xl bg-gray-50/50">
-          <p className="text-sm text-gray-500 font-medium">No active tasks available matching criteria.</p>
-        </div>
-      ) : (
+      <LoadingSpinner isLoading={loading} />
+
+      <EmptyState show={!loading && filteredTodos.length === 0} />
+
+      {!loading && filteredTodos.length > 0 && (
         <div className="space-y-3">
           {filteredTodos.map((todo) => (
             <TaskItem
@@ -192,21 +182,7 @@ export default function TodoPage() {
           ))}
         </div>
       )}
-
-      {snackbar && (
-        <div className="fixed bottom-6 right-6 bg-gray-900 border border-gray-800 text-white px-5 py-4 rounded-xl shadow-xl flex items-center gap-6 animate-fade-in z-50">
-          <span className="text-sm font-medium text-gray-200">{snackbar.message}</span>
-          <button
-            onClick={() => {
-              snackbar.onUndo();
-              setSnackbar(null);
-            }}
-            className="text-amber-400 font-bold hover:text-amber-300 text-xs tracking-wider uppercase transition"
-          >
-            Undo
-          </button>
-        </div>
-      )}
+      <UndoSnackbar snackbar={snackbar} onClose={() => setSnackbar(null)} />
     </main>
   );
 }

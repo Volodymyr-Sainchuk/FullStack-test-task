@@ -12,6 +12,7 @@ export class TodosService {
 
   // GET /api/todos
   async getTodos(category?: string) {
+    console.log('🚀 ~ TodosService ~ getTodos ~ category:', category);
     return this.prisma.todo.findMany({
       where: {
         completed: false,
@@ -22,12 +23,18 @@ export class TodosService {
 
   // POST /api/todos
   async createTodo(text: string, category: string) {
+    console.log('🚀 ~ TodosService ~ createTodo ~ category:', category);
+    console.log('🚀 ~ TodosService ~ createTodo ~ text:', text);
     const activeTasksCount = await this.prisma.todo.count({
       where: {
         category,
         completed: false,
       },
     });
+    console.log(
+      '🚀 ~ TodosService ~ createTodo ~ activeTasksCount:',
+      activeTasksCount,
+    );
 
     if (activeTasksCount >= 5) {
       throw new BadRequestException(

@@ -1,8 +1,22 @@
 version: "3.8"
 
 services:
+  postgres-db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mytodo_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.local
     ports:
       - "5000:5000"
     volumes:
@@ -11,10 +25,17 @@ services:
     environment:
       - NODE_ENV=development
 
+      - DATABASE_URL=postgresql://myuser:mypassword@postgres-db:5432/mytodo_db?schema=public
+    command: sh -c "npx prisma db push && npm run start:dev"
+    depends_on:
+      - postgres-db
+
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     ports:
-      - "5000:3000"
+      - "3000:3000"
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -22,3 +43,6 @@ services:
       - NEXT_PUBLIC_API_URL=http://localhost:5000/api
     depends_on:
       - backend
+
+volumes:
+  pg_data:

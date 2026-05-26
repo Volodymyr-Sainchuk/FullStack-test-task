@@ -1,88 +1,96 @@
 "use client";
 
-import { useForm } from "react-hook-form";
-import axios from "axios";
 import { useState } from "react";
-import { Todo } from "../page";
+import axios from "axios";
 
-interface FormInputs {
-  text: string;
-  category: string;
-}
-
-interface Props {
+interface TaskFormProps {
   categories: string[];
-  onTaskAdded: (task: Todo) => void;
+  onTaskAdded: (task: any) => void;
 }
 
-const API_BASE = "https://fullstack-test-task-1-xvql.onrender.com/api";
+export default function TaskForm({ categories, onTaskAdded }: TaskFormProps) {
+  const [text, setText] = useState("");
+  const [category, setCategory] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-export default function TaskForm({ categories, onTaskAdded }: Props) {
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<FormInputs>();
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const handleButtonClick = async () => {
+    if (!text.trim()) {
+      setError("Please enter task text.");
+      return;
+    }
+    if (!category) {
+      setError("Please select a category.");
+      return;
+    }
 
-  const onSubmit = async (data: FormInputs) => {
     try {
-      setSubmitError(null);
+      setIsSubmitting(true);
+      setError(null);
 
-      const res = await axios.post(`${API_BASE}/todos`, data);
+      const response = await axios.post(`/todos`, {
+        text: text.trim(),
+        category,
+      });
 
-      onTaskAdded(res.data);
-      reset({ text: "", category: data.category });
+      onTaskAdded(response.data);
+      setText("");
     } catch (err: any) {
-      if (err.response && err.response.status === 400) {
-        setSubmitError(err.response.data.message || err.response.data.error);
-      } else {
-        setSubmitError("An unexpected server communication error occurred.");
-      }
+      console.error("Error:", err);
+      setError(err.response?.data?.message || "Failed to create task.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:col-span-2">
-          <input
-            {...register("text", { required: "Task field text description cannot be blank" })}
-            placeholder="Specify task instructions..."
-            className="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition text-gray-800"
-          />
-          {errors.text && <p className="text-red-500 text-xs mt-1 font-medium">{errors.text.message}</p>}
-        </div>
-
-        <div>
-          <select
-            {...register("category", { required: "Please map a category definition" })}
-            className="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition text-gray-700"
-          >
-            <option value="">Select Category</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-          {errors.category && <p className="text-red-500 text-xs mt-1 font-medium">{errors.category.message}</p>}
-        </div>
-      </div>
-
-      {submitError && (
-        <div className="text-red-600 bg-red-50 text-xs font-semibold px-3 py-2 rounded-lg border border-red-100">
-          ⚠️ {submitError}
-        </div>
+    <div className="space-y-4">
+      {error && (
+        <div className="text-xs text-red-500 font-medium bg-red-50 p-2 rounded-lg border border-red-100">{error}</div>
       )}
 
-      <button
-        type="submit"
-        className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition shadow-sm"
-      >
-        Add Task
-      </button>
-    </form>
+      <div className="flex flex-col md:flex-row gap-3">
+        <input
+          type="text"
+          placeholder="What needs to be done?"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          disabled={isSubmitting}
+          className="flex-1 px-4 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:border-indigo-500 disabled:bg-gray-50 text-gray-900"
+        />
+
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          disabled={isSubmitting}
+          className="px-4 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:border-indigo-500 disabled:bg-gray-50 text-gray-900"
+        >
+          <option value="" disabled>
+            Select Category
+          </option>
+          {categories.map((cat) => (
+            <option key={cat} value={cat}>
+              {cat}
+            </option>
+          ))}
+        </select>
+
+        <button
+          type="button"
+          onClick={handleButtonClick}
+          disabled={isSubmitting}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl text-sm font-semibold transition disabled:bg-indigo-400 flex items-center justify-center gap-2 min-w-[110px]"
+        >
+          {isSubmitting ? (
+            <>
+              <div className="rounded-full h-4 w-4 border-2 border-white border-t-transparent animate-spin"></div>
+              <span>Adding...</span>
+            </>
+          ) : (
+            "Add Task"
+          )}
+        </button>
+      </div>
+    </div>
   );
 }
